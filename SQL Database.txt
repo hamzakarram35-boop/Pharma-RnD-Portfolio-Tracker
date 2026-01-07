@@ -1,0 +1,135 @@
+
+-- ==========================================
+-- Create the new database
+-- ==========================================
+CREATE DATABASE PharmaDB;
+GO
+
+-- Use the new database
+USE PharmaDB;
+GO
+
+-- ==========================================
+-- SCIENTISTS TABLE
+-- ==========================================
+CREATE TABLE Scientists (
+    ScientistID INT IDENTITY(1,1) PRIMARY KEY,
+    FullName NVARCHAR(100) NOT NULL,
+    Specialty NVARCHAR(100),
+    Department NVARCHAR(100),
+    Country NVARCHAR(100),
+    YearsOfExperience INT
+);
+
+-- ==========================================
+-- DRUGS TABLE
+-- ==========================================
+CREATE TABLE Drugs (
+    DrugID INT IDENTITY(1,1) PRIMARY KEY,
+    ScientistID INT FOREIGN KEY REFERENCES Scientists(ScientistID),
+    DrugName NVARCHAR(100) NOT NULL,
+    TherapeuticArea NVARCHAR(100),
+    DrugType NVARCHAR(50) CHECK (DrugType IN ('Small Molecule', 'Biologic', 'Vaccine', 'Gene Therapy')),
+    PatentStatus NVARCHAR(20) CHECK (PatentStatus IN ('Pending', 'Granted', 'Expired'))
+);
+
+-- ==========================================
+-- REGULATORY TABLE
+-- ==========================================
+CREATE TABLE Regulatory (
+    SubmissionID INT IDENTITY(1,1) PRIMARY KEY,
+    Authority NVARCHAR(50),
+    SubmissionDate DATE,
+    ApprovalDate DATE,
+    Status NVARCHAR(20) CHECK (Status IN ('Pending', 'Approved', 'Rejected')),
+    Comments NVARCHAR(MAX)
+);
+
+-- ==========================================
+-- COMPETITORS TABLE
+-- ==========================================
+CREATE TABLE Competitors (
+    CompetitorID INT IDENTITY(1,1) PRIMARY KEY,
+    DrugID INT FOREIGN KEY REFERENCES Drugs(DrugID),
+    CompetitorDrugName NVARCHAR(100),
+    CompanyName NVARCHAR(100),
+    City NVARCHAR(100),
+    Country NVARCHAR(100)
+);
+
+-- ==========================================
+-- PARTNERS TABLE
+-- ==========================================
+CREATE TABLE Partners (
+    PartnerID INT IDENTITY(1,1) PRIMARY KEY,
+    PartnerName NVARCHAR(100),
+    PartnershipType NVARCHAR(50) CHECK (PartnershipType IN ('Co-Development', 'Licensing', 'Funding')),
+    Contribution NVARCHAR(100)
+);
+
+-- ==========================================
+-- REVENUES TABLE
+-- ==========================================
+CREATE TABLE Revenues (
+    RevenueID INT IDENTITY(1,1) PRIMARY KEY,
+    DrugID INT FOREIGN KEY REFERENCES Drugs(DrugID),
+    [Date] DATE,
+    ForecastRevenueUSD DECIMAL(18,2),
+    ProbabilityAdjustedRevenueUSD DECIMAL(18,2),
+    MarketRegion NVARCHAR(20) CHECK (MarketRegion IN ('US', 'EU', 'Asia', 'Other'))
+);
+
+-- ==========================================
+-- PIPELINE STAGES TABLE
+-- ==========================================
+CREATE TABLE PipelineStages (
+    StageID INT IDENTITY(1,1) PRIMARY KEY,
+    DrugID INT FOREIGN KEY REFERENCES Drugs(DrugID),
+    StartDate DATE,
+    EndDate DATE,
+    StageName NVARCHAR(50) CHECK (StageName IN ('Discovery', 'Preclinical', 'Phase I', 'Phase II', 'Phase III')),
+    Notes NVARCHAR(MAX),
+    ActualEndDate DATE,
+    Category NVARCHAR(100),
+    DateIncurred DATE,
+    Status NVARCHAR(50),
+    AmountUSD DECIMAL(18,2),
+    Cost DECIMAL(18,2)
+);
+
+-- ==========================================
+-- CLINICAL TRIALS TABLE
+-- ==========================================
+CREATE TABLE ClinicalTrials (
+    TrialID INT IDENTITY(1,1) PRIMARY KEY,
+    DrugID INT FOREIGN KEY REFERENCES Drugs(DrugID),
+    StageID INT FOREIGN KEY REFERENCES PipelineStages(StageID),
+    TrialName NVARCHAR(150),
+    Location NVARCHAR(100),
+    NumberOfPatients INT,
+    StartDate DATE,
+    EndDate DATE,
+    Result NVARCHAR(20) CHECK (Result IN ('Positive', 'Negative', 'Ongoing', 'Terminated'))
+);
+
+-- ==========================================
+-- DRUG-REGULATORY RELATIONSHIP
+-- ==========================================
+CREATE TABLE DrugRegulatory (
+    DrugID INT,
+    SubmissionID INT,
+    PRIMARY KEY (DrugID, SubmissionID),
+    FOREIGN KEY (DrugID) REFERENCES Drugs(DrugID),
+    FOREIGN KEY (SubmissionID) REFERENCES Regulatory(SubmissionID)
+);
+
+-- ==========================================
+-- DRUG-PARTNERS RELATIONSHIP
+-- ==========================================
+CREATE TABLE DrugPartners (
+    DrugID INT,
+    PartnerID INT,
+    PRIMARY KEY (DrugID, PartnerID),
+    FOREIGN KEY (DrugID) REFERENCES Drugs(DrugID),
+    FOREIGN KEY (PartnerID) REFERENCES Partners(PartnerID)
+);
